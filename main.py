@@ -63,7 +63,6 @@ class PyMILS:
 
         # at each step we need to take a row or a cell while there are 2 or more of each option
         # if there's only one row or cell, can't take, so choice is to take the one that is bigger than 1
-        # Make this choice 1 3 5 7 9 ... times for sizes 2 3 4 5 6 ... respectively (I counted!).
 
         max_size = 10
         n_choices = dict(zip(range(2, max_size), range(1, max_size*2, 2)))
@@ -72,7 +71,7 @@ class PyMILS:
         start_images = [image]
         choice_number = 0
 
-        while True:
+        while len(start_images) > 0:
 
             subsets[choice_number] = {}
 
@@ -103,6 +102,8 @@ class PyMILS:
                         for index_to_remove in range(n_objects):
 
                             final_image = np.delete(start_image, index_to_remove, axis=choice)
+
+                            # save these
                             final_images.append(final_image)
 
                         subsets[choice_number][str(start_image)][choice] = final_images
@@ -110,14 +111,27 @@ class PyMILS:
                     else:
                         continue
 
+            # update the choice number and get the set of new start images
             choice_number += 1
-            start_images =
+            last_level = subsets[list(subsets.keys())[-1]]
 
+            start_images = []
 
+            for key in last_level.keys():
 
+                # grab and merge from both choices at each step
+                if 0 in last_level[key].keys():
+                    choice_0_results = last_level[key][0]
+                else:
+                    choice_0_results = []
+                if 1 in last_level[key].keys():
+                    choice_1_results = last_level[key][1]
+                else:
+                    choice_1_results = []
 
-        subsets = []
-        subsets = {}  # index to link bdm information
+                start_images.append(choice_0_results + choice_1_results)
+
+            start_images = [item for sublist in start_images for item in sublist]
 
         return subsets
 
@@ -186,22 +200,27 @@ class PyMILS:
 if __name__ == '__main__':
 
     # make the images
-    size = 4
-    number = 10
-    images = make_images(size, number)
-
+    size = 8
+    number = 5
     PyMILS = PyMILS()
 
-    for image in images:
-        t0 = time.time()
-        subsets = PyMILS.image_subsets_complete(image)
-        dt = time.time() - t0
-        print(dt)
-        t0 = time.time()
-        subset_bdms = PyMILS.batch_image_bdms(subsets)
-        dt = time.time() - t0
-        print(dt)
-        t0 = time.time()
-        state_space = PyMILS.subset_state_space(subsets)
-        dt = time.time() - t0
-        print(dt)
+    for s in range(4, size):
+
+        images = make_images(s, number)
+
+        for image in images:
+
+            t0 = time.time()
+            subsets = PyMILS.image_subsets_complete(image)
+            dt = time.time() - t0
+            print((dt, s))
+
+            """
+            t0 = time.time()
+            subset_bdms = PyMILS.batch_image_bdms(subsets)
+            dt = time.time() - t0
+            print(dt)
+            t0 = time.time()
+            state_space = PyMILS.subset_state_space(subsets)
+            dt = time.time() - t0
+            print(dt)"""
