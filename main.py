@@ -54,7 +54,7 @@ class PyMILS:
         :return: dict of lists of lists (index of matrices)
         '''
 
-        subsets = []
+        subsets = {}
 
         # index the cells for dev purposes
         size = len(image)
@@ -65,36 +65,55 @@ class PyMILS:
         # if there's only one row or cell, can't take, so choice is to take the one that is bigger than 1
         # Make this choice 1 3 5 7 9 ... times for sizes 2 3 4 5 6 ... respectively (I counted!).
 
-        n_choices = dict(zip(range(2, 10), range(1, 20, 2)))
+        max_size = 10
+        n_choices = dict(zip(range(2, max_size), range(1, max_size*2, 2)))
         n_choices = n_choices[size]
 
-        # for each choice that is made
-        for choice_n in range(n_choices):
+        start_images = [image]
+        choice_number = 0
 
-            # These are the two possible choices
-            choices = [0, 1]  # row and column, respectively
+        while True:
 
-            # for each choice
-            for choice in choices:
+            subsets[choice_number] = {}
 
-                # check if the number of columns or rows (whichever is going to be deleted) is bigger than 1
-                num_rows, num_cols = image.shape
+            # for each image in the start nodes at choice number t
+            for start_image in start_images:
 
-                if choice == 0:
-                    n_objects = num_rows
-                else:
-                    n_objects = num_cols
+                subsets[choice_number][str(start_image)] = {}
 
-                # if so, then delete an edge
-                if n_objects > 1:
+                # These are the two possible choices
+                choices = [0, 1]  # row and column, respectively
 
-                    for index_to_remove in range(n_objects):
+                # for each choice
+                for choice in choices:
 
-                        image = np.delete(image, index_to_remove, axis=choice)
-                        subsets.append(image)
+                    # check if the number of columns or rows (whichever is going to be deleted) is bigger than 1
+                    num_rows, num_cols = start_image.shape
 
-                else:
-                    continue
+                    if choice == 0:
+                        n_objects = num_rows
+                    else:
+                        n_objects = num_cols
+
+                    # if so, then delete an object
+                    if n_objects > 1:
+
+                        final_images = []
+
+                        for index_to_remove in range(n_objects):
+
+                            final_image = np.delete(start_image, index_to_remove, axis=choice)
+                            final_images.append(final_image)
+
+                        subsets[choice_number][str(start_image)][choice] = final_images
+
+                    else:
+                        continue
+
+            choice_number += 1
+            start_images =
+
+
 
 
         subsets = []
