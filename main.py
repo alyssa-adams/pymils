@@ -1,10 +1,13 @@
 # Alyssa M Adams, Sept 2020
 
-import pybdm
+from pybdm import BDM
 import time
 import random
 import networkx as nx
 import numpy as np
+
+import pybdm
+pybdm.options.set(raise_if_zero=False)
 
 
 # make some sample images: random, blank, patterned, cellular automata, photos, and half/half mixes
@@ -34,15 +37,27 @@ class PyMILS:
 
     # image := matrix of binary values, a list of lists
 
-    def image_bdm(self, image):
+    def init_bdm(self):
+
+        '''
+        Initialize the bdm class for 2 dimensions and 2 symbols
+        :return: bdm class
+        '''
+
+        bdm = BDM(ndim=2)
+
+        return bdm
+
+    def image_bdm(self, image, bdm_tool):
 
         '''
         Returns the BDM of a matrix
         :param image: List of lists
+        :param bdm_tool: List of lists
         :return: float
         '''
 
-        bdm = image
+        bdm = bdm_tool.bdm(image)
 
         return bdm
 
@@ -64,6 +79,7 @@ class PyMILS:
         # at each step we need to take a row or a cell while there are 2 or more of each option
         # if there's only one row or cell, can't take, so choice is to take the one that is bigger than 1
 
+        # some quick math of how many choices are made for a matrix of this size
         max_size = 10
         n_choices = dict(zip(range(2, max_size), range(1, max_size*2, 2)))
         n_choices = n_choices[size]
@@ -91,11 +107,13 @@ class PyMILS:
 
                     if choice == 0:
                         n_objects = num_rows
+                        n_other = num_cols
                     else:
                         n_objects = num_cols
+                        n_other = num_rows
 
                     # if so, then delete an object
-                    if n_objects > 1:
+                    if n_objects > 1 and n_other > 0:
 
                         final_images = []
 
@@ -135,18 +153,55 @@ class PyMILS:
 
         return subsets
 
-    def batch_image_bdms(self, subsets):
+    def batch_image_bdms(self, subsets, image):
 
         '''
         Measures the BDMs of all possible subsets
         :param subsets: dict of lists of lists (index of matrices)
+        :param image: Matrix, this image gets to be mapped onto the indexed subsets
         :return: dict for the index of bdms
         '''
 
+        # make the dict of matrix coords to map back onto
+        image_size = len(image)
+        cells = image_size**2
+        coords = []
+        for i in range(image_size):
+            for j in range(image_size):
+                coords.append((i, j))
+        coords = dict(zip(range(cells), coords))
+
+        # load in the BDM object
+        bdm_tool = self.init_bdm()
         bdms = {}
 
-        for i in subsets.keys():
-            bdms[i] = self.image_bdm(subsets[i])
+        # measure all the BDMs
+        for step in subsets.keys():
+            for start_image in subsets[step].keys():
+                for choice in subsets[step][start_image].keys():
+                    for resulting_image in subsets[step][start_image][choice]:
+
+                        # check if resulting image is at least one cell
+                        num_rows, num_cols = resulting_image.shape
+                        if num_rows + num_cols > 0:
+
+                            # map image onto index
+                            mapped_resulting_image = []
+
+                            for row in resulting_image:
+                                mapped_row = []
+                                for cell in row:
+                                    data_coords = coords[cell]
+                                    mapped_cell = image[data_coords[0]][data_coords[1]]
+                                    mapped_row.append(mapped_cell)
+                                mapped_resulting_image.append(mapped_row)
+
+                            mapped_resulting_image = np.array(mapped_resulting_image)
+                            bdm = self.image_bdm(mapped_resulting_image, bdm_tool)
+                            bdms[str(mapped_resulting_image)] = bdm
+
+                        else:  # skip because isn't large enough
+                            continue
 
         return bdms
 
@@ -199,28 +254,34 @@ class PyMILS:
 
 if __name__ == '__main__':
 
+    # --------------------------------------------------------------
+    # Experiment 1: Make the complete network of subsets and time it
+    # --------------------------------------------------------------
+
     # make the images
-    size = 8
+    size = 6
     number = 5
     PyMILS = PyMILS()
 
-    for s in range(4, size):
+    images = make_images(size, number)
 
-        images = make_images(s, number)
+    for image in images:
 
-        for image in images:
+        # make all possible subsets
+        # TODO: Randomly sample branches at each "choice" (run the same image multiple times)
+        t0 = time.time()
+        subsets = PyMILS.image_subsets_complete(image)
+        dt = time.time() - t0
+        print('Subsets: ' + str(dt))
 
-            t0 = time.time()
-            subsets = PyMILS.image_subsets_complete(image)
-            dt = time.time() - t0
-            print((dt, s))
+        # map the data onto this indexed state space
+        t0 = time.time()
+        subset_bdms = PyMILS.batch_image_bdms(subsets, image)
+        dt = time.time() - t0
+        print('BDMs: ' + str(dt))
 
-            """
-            t0 = time.time()
-            subset_bdms = PyMILS.batch_image_bdms(subsets)
-            dt = time.time() - t0
-            print(dt)
-            t0 = time.time()
-            state_space = PyMILS.subset_state_space(subsets)
-            dt = time.time() - t0
-            print(dt)"""
+        # turn this into a network
+        t0 = time.time()
+        #state_space = PyMILS.subset_state_space(subsets)
+        #dt = time.time() - t0
+        #print(dt)
