@@ -5,6 +5,8 @@ import time
 import random
 import networkx as nx
 import numpy as np
+import matplotlib.pyplot as plt
+from networkx.drawing.nx_agraph import graphviz_layout
 
 import pybdm
 pybdm.options.set(raise_if_zero=False)
@@ -198,14 +200,14 @@ class PyMILS:
 
                             mapped_resulting_image = np.array(mapped_resulting_image)
                             bdm = self.image_bdm(mapped_resulting_image, bdm_tool)
-                            bdms[str(mapped_resulting_image)] = bdm
+                            bdms[str(resulting_image)] = {'bdm': bdm, 'state': str(mapped_resulting_image)}
 
                         else:  # skip because isn't large enough
                             continue
 
         return bdms
 
-    def subset_state_space(self, subsets):
+    def subset_state_space(self, subsets, subset_bdms, image_bdm):
 
         '''
         Returns a graph with vertices as matrices and edges as single-deletion possible transitions
@@ -213,7 +215,38 @@ class PyMILS:
         :return: nx graph
         '''
 
-        g = nx.Graph()
+        g = nx.DiGraph()
+
+        # go through all the levels of subsets and add edges to network
+        for step in subsets.keys():
+            for start_image in subsets[step].keys():
+                for choice in subsets[step][start_image].keys():
+                    for resulting_image in subsets[step][start_image][choice]:
+
+                        # check if resulting image is at least one cell
+                        num_rows, num_cols = resulting_image.shape
+                        if num_rows + num_cols > 0:
+
+                            # check to see if this is the first one, because need to add initial image edges
+                            if step == 0:
+                                root_node = str(np.array(image_bdm[0]))
+                                root_bdm = image_bdm[1]
+                                out_node = subset_bdms[str(resulting_image)]['state']
+                                out_bdm = subset_bdms[str(resulting_image)]['bdm']
+
+                                g.add_edge(root_node, out_node)
+                                g.add_node(root_node, weight=root_bdm)
+                                g.add_node(out_node, weight=out_bdm)
+
+                            else:
+                                root_node = subset_bdms[str(start_image)]['state']
+                                root_bdm = subset_bdms[str(start_image)]['bdm']
+                                out_node = subset_bdms[str(resulting_image)]['state']
+                                out_bdm = subset_bdms[str(resulting_image)]['bdm']
+
+                                g.add_edge(root_node, out_node)
+                                g.add_node(root_node, weight=root_bdm)
+                                g.add_node(out_node, weight=out_bdm)
 
         return g
 
@@ -259,7 +292,7 @@ if __name__ == '__main__':
     # --------------------------------------------------------------
 
     # make the images
-    size = 6
+    size = 4
     number = 5
     PyMILS = PyMILS()
 
@@ -269,19 +302,22 @@ if __name__ == '__main__':
 
         # make all possible subsets
         # TODO: Randomly sample branches at each "choice" (run the same image multiple times)
+        # TODO: don't go any smaller than 4 rows and edges, the BDM will be 0
         t0 = time.time()
         subsets = PyMILS.image_subsets_complete(image)
         dt = time.time() - t0
         print('Subsets: ' + str(dt))
 
-        # map the data onto this indexed state space
+        # map the data onto this indexed state space and measure bdm
         t0 = time.time()
         subset_bdms = PyMILS.batch_image_bdms(subsets, image)
         dt = time.time() - t0
         print('BDMs: ' + str(dt))
 
-        # turn this into a network
+        # get the state space network
         t0 = time.time()
-        #state_space = PyMILS.subset_state_space(subsets)
-        #dt = time.time() - t0
-        #print(dt)
+        bdm_tool = PyMILS.init_bdm()
+        image_bdm = (image, PyMILS.image_bdm(np.array(image), bdm_tool))
+        state_space = PyMILS.subset_state_space(subsets, subset_bdms, image_bdm)
+        dt = time.time() - t0
+        print('State space network: ' + str(dt))
