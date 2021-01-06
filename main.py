@@ -69,6 +69,7 @@ class PyMILS:
         '''
         Makes all possible subsets of a particular graph
         :param image: list of lists
+        :param prune: T or F (randomly prunes branches to sample image subspace)
         :return: dict of lists of lists (index of matrices)
         '''
 
@@ -276,7 +277,6 @@ class PyMILS:
             for path in all_a_to_b_paths:
                 bdms = [statespace.nodes[node]['weight'] for node in path]
                 diffs = np.diff(bdms)
-
                 paths[(root_node, leaf)][str(path)] = diffs
 
         return paths
@@ -326,8 +326,8 @@ if __name__ == '__main__':
     # --------------------------------------------------------------
 
     # make the images
-    size = 7
-    number = 5
+    size = 6
+    number = 3  # number of random images to be created of this size
     PyMILS = PyMILS()
 
     images = make_images(size, number)
@@ -363,7 +363,7 @@ if __name__ == '__main__':
         dt = time.time() - t0
         print('Measuring paths: ' + str(dt))
 
-        # plot these differences
+        # plot these differences (each line is a possible trajectory from start image to a final image)
         t0 = time.time()
 
         lines = []
@@ -372,6 +372,8 @@ if __name__ == '__main__':
             for path in bdm_paths[ab]:
                 line = bdm_paths[ab][path]
                 line = np.cumsum(line)
+                # the last of these values is the total BDM difference between the original image and the last image
+
                 lines.append(line)
 
         [plt.plot(list(range(len(line))), line, linewidth=0.5) for line in lines]
