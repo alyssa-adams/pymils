@@ -311,8 +311,10 @@ class PyMILS:
 
             # randomly pick row or column
             # randomly pick an index
+            # TODO: Make the aspect ratio the same as the original image
             choice = random.choice((0, 1))
             i = random.choice(range(size[choice]))
+            # TODO Rather than doing whole path, pick best option at each point
 
             if choice == 0:
                 del img[i]
@@ -338,7 +340,7 @@ class PyMILS:
 
         start_bdm = PyMILS.image_bdm(np.array(img), bdm_tool)
 
-        # make a bunch of paths
+        # make a bunch of paths # TODO, don't need to find the whole path, just need to sample some possible options at each time step
         paths = [PyMILS.mils_path(image.copy(), min_size, bdm_tool) for _ in range(n_paths)]
 
         # pick the one closest to the original BDM value
@@ -604,7 +606,7 @@ if __name__ == '__main__':
 
     final_image_bdms = []
     n_paths = 500
-    min_size = 0.25  # make min_size a percent of the original image
+    min_size = 0.25  # make min_size a percent of the original image # TODO make the min_size a user option
 
     for image in images:
 
