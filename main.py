@@ -7,10 +7,13 @@ import json
 import random
 import networkx as nx
 import numpy as np
+import pickle
 from operator import itemgetter
 from itertools import groupby
 import matplotlib.pyplot as plt
 plt.style.use('seaborn-muted')
+
+from multiprocessing import Pool, freeze_support
 from networkx.drawing.nx_agraph import graphviz_layout
 
 import pybdm
@@ -421,15 +424,17 @@ class PyMILS:
 
 if __name__ == '__main__':
 
-    # make the images
-    size = 50
-    number = 50  # number of random images to be created of this size
     PyMILS = PyMILS()
 
-    # These are to make random images
-    #images = make_images(size, number)
+    sizes = [20, 40, 60, 80, 100]
+    min_size = 0.5
+    sampling = 1
+    number = 100
+    trials = 20
+    image_dir = 'images'
 
     # more realistic test images, made from: https://www.dcode.fr/binary-image
+    """
     images = [
         [
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -863,6 +868,7 @@ if __name__ == '__main__':
            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
         ]
     ]
+"""
 
     # (just need to initialize this once for the 1D c-r trajectories in Part 3)
     #bdm1 = BDM(ndim=1)
@@ -873,19 +879,100 @@ if __name__ == '__main__':
     # Plot the bdm differences between start images and final images for many different image sizes
     # --------------------------------------------------------------
 
-    min_size = 0.5
-    sampling = 1
+    # do this for randomly generated images
+    """
+    for size in sizes:
+
+        images = make_images(size, number)
+
+        data = {}
+
+        for num, image in enumerate(images):
+
+            print(num)
+
+            bdm_tool = PyMILS.init_bdm()
+
+            # test the speed of the code as a function of image size for random images
+
+            # get BDM values for the 4 quadrants before the compression
+            top_half = image[:int(len(image)/2)]
+            top_left = list(map(lambda x: x[:int(len(x)/2)], top_half))
+            top_right = list(map(lambda x: x[int(len(x) / 2):], top_half))
+            bottom_half = image[int(len(image) / 2):]
+            bottom_left = list(map(lambda x: x[:int(len(x) / 2)], bottom_half))
+            bottom_right = list(map(lambda x: x[int(len(x) / 2):], bottom_half))
+
+            bdm_top_left = bdm_tool.bdm(np.array(top_left))
+            bdm_top_right = bdm_tool.bdm(np.array(top_right))
+            bdm_bottom_left = bdm_tool.bdm(np.array(bottom_left))
+            bdm_bottom_right = bdm_tool.bdm(np.array(bottom_right))
+
+            # save to dict
+            data[num] = {
+                'bdm_top_left_before': bdm_top_left,
+                'bdm_top_right_before': bdm_top_right,
+                'bdm_bottom_left_before': bdm_bottom_left,
+                'bdm_bottom_right_before': bdm_bottom_right
+            }
+
+            for trial in range(trials):
+
+                # run PyMILS and time it
+                t0 = time.time()
+                chunk_size = 4
+                final_image = PyMILS.mils(image, min_size, bdm_tool, sampling, chunk_size)
+                tf = time.time() - t0
+
+                # get BDM values for the 4 quadrants after the compression
+                top_half = final_image[:int(len(final_image) / 2)]
+                top_left = list(map(lambda x: x[:int(len(x) / 2)], top_half))
+                top_right = list(map(lambda x: x[int(len(x) / 2):], top_half))
+                bottom_half = final_image[int(len(final_image) / 2):]
+                bottom_left = list(map(lambda x: x[:int(len(x) / 2)], bottom_half))
+                bottom_right = list(map(lambda x: x[int(len(x) / 2):], bottom_half))
+
+                bdm_top_left = bdm_tool.bdm(np.array(top_left))
+                bdm_top_right = bdm_tool.bdm(np.array(top_right))
+                bdm_bottom_left = bdm_tool.bdm(np.array(bottom_left))
+                bdm_bottom_right = bdm_tool.bdm(np.array(bottom_right))
+
+                # save to dict
+                data[num][trial] = {}
+
+                data[num][trial] = {
+                    'bdm_top_left_after': bdm_top_left,
+                    'bdm_top_right_after': bdm_top_right,
+                    'bdm_bottom_left_after': bdm_bottom_left,
+                    'bdm_bottom_right_after': bdm_bottom_right,
+                    'time': tf
+                }
+
+        # save to pickle file to plot later
+        with open('pickle_jar/random_data_size_' + str(size) + '.p', 'wb') as handle:
+            pickle.dump(data, handle)
+
+    quit()
+"""
+
+    # do this for specific images
+    images = [
+
+    ]
+
+    data = {}
 
     for num, image in enumerate(images):
 
-        plt.imshow(image)
-        plt.savefig("test_before_" + str(num) + ".png")
+        print(num)
 
         bdm_tool = PyMILS.init_bdm()
 
+        # test the speed of the code as a function of image size for random images
+
         # get BDM values for the 4 quadrants before the compression
-        top_half = image[:int(len(image)/2)]
-        top_left = list(map(lambda x: x[:int(len(x)/2)], top_half))
+        top_half = image[:int(len(image) / 2)]
+        top_left = list(map(lambda x: x[:int(len(x) / 2)], top_half))
         top_right = list(map(lambda x: x[int(len(x) / 2):], top_half))
         bottom_half = image[int(len(image) / 2):]
         bottom_left = list(map(lambda x: x[:int(len(x) / 2)], bottom_half))
@@ -896,33 +983,60 @@ if __name__ == '__main__':
         bdm_bottom_left = bdm_tool.bdm(np.array(bottom_left))
         bdm_bottom_right = bdm_tool.bdm(np.array(bottom_right))
 
-        print('BDM quadrants before compression: ' + str([bdm_top_left, bdm_top_right, bdm_bottom_left, bdm_bottom_right]))
+        # save image to file
+        plt.imshow(data)
+        plt.savefig(image_dir + '/image_' + str(num) + '.png')
 
-        # run PyMILS and time it
-        t0 = time.time()
-        chunk_size = 4
-        final_image = PyMILS.mils(image, min_size, bdm_tool, sampling, chunk_size)
-        print("Time spent compressing image: " + str(time.time() - t0))
+        # save to dict
+        data[num] = {
+            'bdm_top_left_before': bdm_top_left,
+            'bdm_top_right_before': bdm_top_right,
+            'bdm_bottom_left_before': bdm_bottom_left,
+            'bdm_bottom_right_before': bdm_bottom_right
+        }
 
-        plt.imshow(final_image)
-        plt.savefig("test_after_" + str(num) + ".png")
+        for trial in range(trials):
 
-        # get BDM values for the 4 quadrants after the compression
-        top_half = final_image[:int(len(image) / 2)]
-        top_left = list(map(lambda x: x[:int(len(x) / 2)], top_half))
-        top_right = list(map(lambda x: x[int(len(x) / 2):], top_half))
-        bottom_half = final_image[int(len(image) / 2):]
-        bottom_left = list(map(lambda x: x[:int(len(x) / 2)], bottom_half))
-        bottom_right = list(map(lambda x: x[int(len(x) / 2):], bottom_half))
+            # run PyMILS and time it
+            t0 = time.time()
+            chunk_size = 4
+            final_image = PyMILS.mils(image, min_size, bdm_tool, sampling, chunk_size)
+            tf = time.time() - t0
 
-        bdm_top_left = bdm_tool.bdm(np.array(top_left))
-        bdm_top_right = bdm_tool.bdm(np.array(top_right))
-        bdm_bottom_left = bdm_tool.bdm(np.array(bottom_left))
-        bdm_bottom_right = bdm_tool.bdm(np.array(bottom_right))
+            # get BDM values for the 4 quadrants after the compression
+            top_half = final_image[:int(len(final_image) / 2)]
+            top_left = list(map(lambda x: x[:int(len(x) / 2)], top_half))
+            top_right = list(map(lambda x: x[int(len(x) / 2):], top_half))
+            bottom_half = final_image[int(len(final_image) / 2):]
+            bottom_left = list(map(lambda x: x[:int(len(x) / 2)], bottom_half))
+            bottom_right = list(map(lambda x: x[int(len(x) / 2):], bottom_half))
 
-        print('BDM quadrants after compression: ' + str([bdm_top_left, bdm_top_right, bdm_bottom_left, bdm_bottom_right]))
+            bdm_top_left = bdm_tool.bdm(np.array(top_left))
+            bdm_top_right = bdm_tool.bdm(np.array(top_right))
+            bdm_bottom_left = bdm_tool.bdm(np.array(bottom_left))
+            bdm_bottom_right = bdm_tool.bdm(np.array(bottom_right))
+
+            # save image to file
+            plt.imshow(data)
+            plt.savefig(image_dir + '/image_' + str(num) + 'after_trial_' + str(trial) + '.png')
+
+            # save to dict
+            data[num][trial] = {}
+
+            data[num][trial] = {
+                'bdm_top_left_after': bdm_top_left,
+                'bdm_top_right_after': bdm_top_right,
+                'bdm_bottom_left_after': bdm_bottom_left,
+                'bdm_bottom_right_after': bdm_bottom_right,
+                'time': tf
+            }
+
+    # save to pickle file to plot later
+    with open('pickle_jar/image_data.p', 'wb') as handle:
+        pickle.dump(data, handle)
 
     quit()
+
 
     for image in images:
 
