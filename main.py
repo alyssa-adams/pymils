@@ -10,7 +10,7 @@ import networkx as nx
 import numpy as np
 import pickle
 from operator import itemgetter
-from itertools import groupby
+from itertools import groupby, product
 
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -5494,13 +5494,13 @@ if __name__ == '__main__':
     for i, image in enumerate(images):
 
         image = image[:image_size]
-        if len(image) != 100:
-            rows_to_add = 100-len(image)
-            [image.append([0]*100) for _ in range(rows_to_add)]
+        if len(image) != image_size:
+            rows_to_add = image_size-len(image)
+            [image.append([0]*image_size) for _ in range(rows_to_add)]
 
         image = list(map(lambda x: x[:image_size], image))
-        if len(image[0]) != 100:
-            cols_to_add = 100-len(image[0])
+        if len(image[0]) != image_size:
+            cols_to_add = image_size-len(image[0])
             image = list(map(lambda x: x+[0]*cols_to_add, image))
 
         image_bdm = bdm_tool.bdm(np.array(image))
@@ -5512,22 +5512,30 @@ if __name__ == '__main__':
     # 2,4,11,14 are high
 
     pasted_images = []
-    n_pasted_images = 100
+    n_pasted_images = 20
+    
+    image_groups = list(product([0,1,3,7], [2,4,11,14]))
 
-    for _ in range(n_pasted_images):
+    for group in image_groups:
 
-        random_low = random.choice([0,1,3,7])
-        random_high = random.choice([2,4,11,14])
+        #random_low = random.choice([0,1,3,7])
+        #random_high = random.choice([2,4,11,14])
         #random_middle = random.sample([5,6,8,9,10,12,13], 2)
         #order = [random_low, random_high] + random_middle
-        order = [random_low, random_high]
+
+        order = list(group)
         random.shuffle(order)
 
-        left = np.concatenate((np.array(images_trimmed[order[0]]), np.array(images_trimmed[order[1]])))
-        right = np.concatenate((np.array(images_trimmed[order[2]]), np.array(images_trimmed[order[3]])))
-        pasted_image = np.concatenate((left, right),axis=1)
-        pasted_image = pasted_image.tolist()
+        #left = np.concatenate((np.array(images_trimmed[order[0]]), np.array(images_trimmed[order[1]])))
+        #right = np.concatenate((np.array(images_trimmed[order[2]]), np.array(images_trimmed[order[3]])))
 
+        # concat them up and down / left and right
+        pasted_image = np.concatenate((np.array(images_trimmed[order[0]]), np.array(images_trimmed[order[1]])), axis=1)
+        pasted_image = pasted_image.tolist()
+        pasted_images.append(pasted_image)
+
+        pasted_image = np.concatenate((np.array(images_trimmed[order[0]]), np.array(images_trimmed[order[1]])))
+        pasted_image = pasted_image.tolist()
         pasted_images.append(pasted_image)
 
     # do pymils on those pasted images
@@ -5540,13 +5548,18 @@ if __name__ == '__main__':
 
         # test the speed of the code as a function of image size for random images
 
+        # get BDM values for the 2 halves before the compression
+        if len(image) == image_size:
+            half0 =
+            half1 =
+
         # get BDM values for the 4 quadrants before the compression
-        top_half = image[:int(len(image) / 2)]
-        top_left = list(map(lambda x: x[:int(len(x) / 2)], top_half))
-        top_right = list(map(lambda x: x[int(len(x) / 2):], top_half))
-        bottom_half = image[int(len(image) / 2):]
-        bottom_left = list(map(lambda x: x[:int(len(x) / 2)], bottom_half))
-        bottom_right = list(map(lambda x: x[int(len(x) / 2):], bottom_half))
+        #top_half = image[:int(len(image) / 2)]
+        #top_left = list(map(lambda x: x[:int(len(x) / 2)], top_half))
+        #top_right = list(map(lambda x: x[int(len(x) / 2):], top_half))
+        #bottom_half = image[int(len(image) / 2):]
+        #bottom_left = list(map(lambda x: x[:int(len(x) / 2)], bottom_half))
+        #bottom_right = list(map(lambda x: x[int(len(x) / 2):], bottom_half))
 
         bdm_top_left = bdm_tool.bdm(np.array(top_left))
         bdm_top_right = bdm_tool.bdm(np.array(top_right))
