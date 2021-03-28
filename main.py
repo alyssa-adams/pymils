@@ -5585,12 +5585,10 @@ if __name__ == '__main__':
         #}
 
         # save to dict
-        #data[num] = {
-        #    'bdm_top_left_before': bdm_top_left,
-        #    'bdm_top_right_before': bdm_top_right,
-        #    'bdm_bottom_left_before': bdm_bottom_left,
-        #    'bdm_bottom_right_before': bdm_bottom_right
-        #}
+        data[num] = {
+            'bdm_half0_before': bdm_half0,
+            'bdm_half1_before': bdm_half1
+        }
 
         for trial in range(trials):
 
@@ -5600,18 +5598,29 @@ if __name__ == '__main__':
             final_image = PyMILS.mils(image, min_size, bdm_tool, sampling, chunk_size)
             tf = time.time() - t0
 
-            # get BDM values for the 4 quadrants after the compression
-            top_half = final_image[:int(len(final_image) / 2)]
-            top_left = list(map(lambda x: x[:int(len(x) / 2)], top_half))
-            top_right = list(map(lambda x: x[int(len(x) / 2):], top_half))
-            bottom_half = final_image[int(len(final_image) / 2):]
-            bottom_left = list(map(lambda x: x[:int(len(x) / 2)], bottom_half))
-            bottom_right = list(map(lambda x: x[int(len(x) / 2):], bottom_half))
+            # get BDM values for the 2 halves before the compression
+            if len(image) == image_size:  # side by side halves
+                half0 = list(map(lambda x: x[:int(len(x) / 2)], image))
+                half1 = list(map(lambda x: x[int(len(x) / 2):], image))
+            else:  # top and bottom halves
+                half0 = image[:int(len(image) / 2)]
+                half1 = image[int(len(image) / 2):]
 
-            bdm_top_left = bdm_tool.bdm(np.array(top_left))
-            bdm_top_right = bdm_tool.bdm(np.array(top_right))
-            bdm_bottom_left = bdm_tool.bdm(np.array(bottom_left))
-            bdm_bottom_right = bdm_tool.bdm(np.array(bottom_right))
+            # get BDM values for the 4 quadrants before the compression
+            # top_half = image[:int(len(image) / 2)]
+            # top_left = list(map(lambda x: x[:int(len(x) / 2)], top_half))
+            # top_right = list(map(lambda x: x[int(len(x) / 2):], top_half))
+            # bottom_half = image[int(len(image) / 2):]
+            # bottom_left = list(map(lambda x: x[:int(len(x) / 2)], bottom_half))
+            # bottom_right = list(map(lambda x: x[int(len(x) / 2):], bottom_half))
+
+            # bdm_top_left = bdm_tool.bdm(np.array(top_left))
+            # bdm_top_right = bdm_tool.bdm(np.array(top_right))
+            # bdm_bottom_left = bdm_tool.bdm(np.array(bottom_left))
+            # bdm_bottom_right = bdm_tool.bdm(np.array(bottom_right))
+
+            bdm_half0 = bdm_tool.bdm(np.array(half0))
+            bdm_half1 = bdm_tool.bdm(np.array(half1))
 
             # save image to file
             plt.imshow(final_image)
