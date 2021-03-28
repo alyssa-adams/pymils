@@ -5552,9 +5552,11 @@ if __name__ == '__main__':
         if len(image) == image_size:  # side by side halves
             half0 = list(map(lambda x: x[:int(len(x) / 2)], image))
             half1 = list(map(lambda x: x[int(len(x) / 2):], image))
+            sideside = True
         else:  # top and bottom halves
             half0 = image[:int(len(image) / 2)]
             half1 = image[int(len(image) / 2):]
+            sideside = False
 
         # get BDM values for the 4 quadrants before the compression
         #top_half = image[:int(len(image) / 2)]
@@ -5599,12 +5601,12 @@ if __name__ == '__main__':
             tf = time.time() - t0
 
             # get BDM values for the 2 halves before the compression
-            if len(image) == image_size:  # side by side halves
-                half0 = list(map(lambda x: x[:int(len(x) / 2)], image))
-                half1 = list(map(lambda x: x[int(len(x) / 2):], image))
+            if sideside:  # side by side halves
+                half0 = list(map(lambda x: x[:int(len(x) / 2)], final_image))
+                half1 = list(map(lambda x: x[int(len(x) / 2):], final_image))
             else:  # top and bottom halves
-                half0 = image[:int(len(image) / 2)]
-                half1 = image[int(len(image) / 2):]
+                half0 = final_image[:int(len(final_image) / 2)]
+                half1 = final_image[int(len(final_image) / 2):]
 
             # get BDM values for the 4 quadrants before the compression
             # top_half = image[:int(len(image) / 2)]
@@ -5629,12 +5631,9 @@ if __name__ == '__main__':
             # save to dict
             data[num][trial] = {}
 
-            data[num][trial] = {
-                'bdm_top_left_after': bdm_top_left,
-                'bdm_top_right_after': bdm_top_right,
-                'bdm_bottom_left_after': bdm_bottom_left,
-                'bdm_bottom_right_after': bdm_bottom_right,
-                'time': tf
+            data[num] = {
+                'bdm_half0_after': bdm_half0,
+                'bdm_half1_after': bdm_half1
             }
 
     # save to pickle file to plot later
@@ -5651,25 +5650,36 @@ if __name__ == '__main__':
 
         # test the speed of the code as a function of image size for random images
 
+        # get BDM values for the 2 halves before the compression
+        if len(image) == image_size:  # side by side halves
+            half0 = list(map(lambda x: x[:int(len(x) / 2)], image))
+            half1 = list(map(lambda x: x[int(len(x) / 2):], image))
+            sideside = True
+        else:  # top and bottom halves
+            half0 = image[:int(len(image) / 2)]
+            half1 = image[int(len(image) / 2):]
+            sideside = False
+
         # get BDM values for the 4 quadrants before the compression
-        top_half = image[:int(len(image) / 2)]
-        top_left = list(map(lambda x: x[:int(len(x) / 2)], top_half))
-        top_right = list(map(lambda x: x[int(len(x) / 2):], top_half))
-        bottom_half = image[int(len(image) / 2):]
-        bottom_left = list(map(lambda x: x[:int(len(x) / 2)], bottom_half))
-        bottom_right = list(map(lambda x: x[int(len(x) / 2):], bottom_half))
+        #top_half = image[:int(len(image) / 2)]
+        #top_left = list(map(lambda x: x[:int(len(x) / 2)], top_half))
+        #top_right = list(map(lambda x: x[int(len(x) / 2):], top_half))
+        #bottom_half = image[int(len(image) / 2):]
+        #bottom_left = list(map(lambda x: x[:int(len(x) / 2)], bottom_half))
+        #bottom_right = list(map(lambda x: x[int(len(x) / 2):], bottom_half))
 
-        bdm_top_left = bdm_tool.bdm(np.array(top_left))
-        bdm_top_right = bdm_tool.bdm(np.array(top_right))
-        bdm_bottom_left = bdm_tool.bdm(np.array(bottom_left))
-        bdm_bottom_right = bdm_tool.bdm(np.array(bottom_right))
+        #bdm_top_left = bdm_tool.bdm(np.array(top_left))
+        #bdm_top_right = bdm_tool.bdm(np.array(top_right))
+        #bdm_bottom_left = bdm_tool.bdm(np.array(bottom_left))
+        #bdm_bottom_right = bdm_tool.bdm(np.array(bottom_right))
 
+        bdm_half0 = bdm_tool.bdm(np.array(half0))
+        bdm_half1 = bdm_tool.bdm(np.array(half1))
+        
         # save to dict
-        control_data[num] = {
-            'bdm_top_left_before': bdm_top_left,
-            'bdm_top_right_before': bdm_top_right,
-            'bdm_bottom_left_before': bdm_bottom_left,
-            'bdm_bottom_right_before': bdm_bottom_right
+        data[num] = {
+            'bdm_half0_before': bdm_half0,
+            'bdm_half1_before': bdm_half1
         }
 
         for trial in range(trials):
