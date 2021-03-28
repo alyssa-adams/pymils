@@ -5564,22 +5564,33 @@ if __name__ == '__main__':
         #bottom_left = list(map(lambda x: x[:int(len(x) / 2)], bottom_half))
         #bottom_right = list(map(lambda x: x[int(len(x) / 2):], bottom_half))
 
-        bdm_top_left = bdm_tool.bdm(np.array(top_left))
-        bdm_top_right = bdm_tool.bdm(np.array(top_right))
-        bdm_bottom_left = bdm_tool.bdm(np.array(bottom_left))
-        bdm_bottom_right = bdm_tool.bdm(np.array(bottom_right))
+        #bdm_top_left = bdm_tool.bdm(np.array(top_left))
+        #bdm_top_right = bdm_tool.bdm(np.array(top_right))
+        #bdm_bottom_left = bdm_tool.bdm(np.array(bottom_left))
+        #bdm_bottom_right = bdm_tool.bdm(np.array(bottom_right))
+
+        bdm_half0 = bdm_tool.bdm(np.array(half0))
+        bdm_half1 = bdm_tool.bdm(np.array(half1))
 
         # save image to file
         plt.imshow(image)
         plt.savefig(image_dir + '/image_' + str(num) + '.png')
 
         # save to dict
-        data[num] = {
-            'bdm_top_left_before': bdm_top_left,
-            'bdm_top_right_before': bdm_top_right,
-            'bdm_bottom_left_before': bdm_bottom_left,
-            'bdm_bottom_right_before': bdm_bottom_right
-        }
+        #data[num] = {
+        #    'bdm_top_left_before': bdm_top_left,
+        #    'bdm_top_right_before': bdm_top_right,
+        #    'bdm_bottom_left_before': bdm_bottom_left,
+        #    'bdm_bottom_right_before': bdm_bottom_right
+        #}
+
+        # save to dict
+        #data[num] = {
+        #    'bdm_top_left_before': bdm_top_left,
+        #    'bdm_top_right_before': bdm_top_right,
+        #    'bdm_bottom_left_before': bdm_bottom_left,
+        #    'bdm_bottom_right_before': bdm_bottom_right
+        #}
 
         for trial in range(trials):
 
