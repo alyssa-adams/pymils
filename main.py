@@ -5525,14 +5525,15 @@ if __name__ == '__main__':
         left = np.concatenate((np.array(images_trimmed[order[0]]), np.array(images_trimmed[order[1]])))
         right = np.concatenate((np.array(images_trimmed[order[2]]), np.array(images_trimmed[order[3]])))
         pasted_image = np.concatenate((left, right),axis=1)
+        pasted_image = pasted_image.tolist()
 
         pasted_images.append(pasted_image)
 
     # do pymils on those pasted images
 
-    data = {}
+    """    data = {}
 
-    for num, image in enumerate(images):
+    for num, image in enumerate(pasted_images):
 
         print(num)
 
@@ -5601,13 +5602,13 @@ if __name__ == '__main__':
 
     # save to pickle file to plot later
     with open('pickle_jar/image_data.p', 'wb') as handle:
-        pickle.dump(data, handle)
+        pickle.dump(data, handle)"""
 
     # compare with randomly removing rows and columns
 
     control_data = {}
 
-    for num, image in enumerate(images):
+    for num, image in enumerate(pasted_images):
 
         print(num)
 
@@ -5639,6 +5640,19 @@ if __name__ == '__main__':
             # randomly remove rows and columns in the same chunk sizes
             t0 = time.time()
             chunk_size = 4
+
+            # 4*20 iterations on both rows and columns to get final image size of 100*100
+            # randomly remove rows
+            for _ in range(20):
+                index = random.choice(range(len(image)))
+                image = image[:index] + image[index+4:]
+
+                # randomly remove columns
+                for _ in range(20):
+                    index = random.choice(range(len(image)))
+                    image = image[:index] + image[index + 4:]
+
+
 
             final_image = PyMILS.mils(image, min_size, bdm_tool, sampling, chunk_size)
             tf = time.time() - t0
