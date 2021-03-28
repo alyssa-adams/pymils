@@ -5507,7 +5507,7 @@ if __name__ == '__main__':
         image_bdms[i] = image_bdm
         images_trimmed.append(image)
 
-    # paste images together with different complexity values together in quadrants
+    # paste images together with different complexity values together in pairs
     # 0,1,3,7 are low
     # 2,4,11,14 are high
 
@@ -5518,8 +5518,9 @@ if __name__ == '__main__':
 
         random_low = random.choice([0,1,3,7])
         random_high = random.choice([2,4,11,14])
-        random_middle = random.sample([5,6,8,9,10,12,13], 2)
-        order = [random_low, random_high] + random_middle
+        #random_middle = random.sample([5,6,8,9,10,12,13], 2)
+        #order = [random_low, random_high] + random_middle
+        order = [random_low, random_high]
         random.shuffle(order)
 
         left = np.concatenate((np.array(images_trimmed[order[0]]), np.array(images_trimmed[order[1]])))
@@ -5531,7 +5532,7 @@ if __name__ == '__main__':
 
     # do pymils on those pasted images
 
-    """    data = {}
+    data = {}
 
     for num, image in enumerate(pasted_images):
 
@@ -5602,7 +5603,7 @@ if __name__ == '__main__':
 
     # save to pickle file to plot later
     with open('pickle_jar/image_data.p', 'wb') as handle:
-        pickle.dump(data, handle)"""
+        pickle.dump(data, handle)
 
     # compare with randomly removing rows and columns
 
@@ -5641,20 +5642,19 @@ if __name__ == '__main__':
             t0 = time.time()
             chunk_size = 4
 
-            # 4*20 iterations on both rows and columns to get final image size of 100*100
+            # 4*25 iterations on both rows and columns to get final image size of 100*100
             # randomly remove rows
-            for _ in range(20):
+            for _ in range(25):
                 index = random.choice(range(len(image)))
                 image = image[:index] + image[index+4:]
 
-                # randomly remove columns
-                for _ in range(20):
-                    index = random.choice(range(len(image)))
-                    image = image[:index] + image[index + 4:]
+            # randomly remove columns
+            for _ in range(25):
+                index = random.choice(range(len(image)))
+                image = list(map(lambda x: x[:index] + x[index+4:], image))
 
+            final_image = image
 
-
-            final_image = PyMILS.mils(image, min_size, bdm_tool, sampling, chunk_size)
             tf = time.time() - t0
 
             # get BDM values for the 4 quadrants after the compression
@@ -5687,7 +5687,9 @@ if __name__ == '__main__':
 
     # save to pickle file to plot later
     with open('pickle_jar/image_control_data.p', 'wb') as handle:
-        pickle.dump(data, handle)
+        pickle.dump(control_data, handle)
+
+    quit()
 
     # plot results
 
