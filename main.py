@@ -5549,9 +5549,12 @@ if __name__ == '__main__':
         # test the speed of the code as a function of image size for random images
 
         # get BDM values for the 2 halves before the compression
-        if len(image) == image_size:
-            half0 =
-            half1 =
+        if len(image) == image_size:  # side by side halves
+            half0 = list(map(lambda x: x[:int(len(x) / 2)], image))
+            half1 = list(map(lambda x: x[int(len(x) / 2):], image))
+        else:  # top and bottom halves
+            half0 = image[:int(len(image) / 2)]
+            half1 = image[int(len(image) / 2):]
 
         # get BDM values for the 4 quadrants before the compression
         #top_half = image[:int(len(image) / 2)]
