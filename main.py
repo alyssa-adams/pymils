@@ -5688,20 +5688,31 @@ if __name__ == '__main__':
             t0 = time.time()
             chunk_size = 4
 
-            # 4*25 iterations on both rows and columns to get final image size of 100*100
-            # randomly remove rows
-            if len(image) == 0:
-                image
-            for _ in range(25):
-                index = random.choice(range(len(image)))
-                image = image[:index] + image[index+4:]
-
-            # randomly remove columns
-            for _ in range(25):
-                index = random.choice(range(len(image)))
-                image = list(map(lambda x: x[:index] + x[index+4:], image))
-
             final_image = image
+
+            # take out more r/c on long side than short side
+            if sideside:
+                # randomly remove rows
+                for _ in range(12):
+                    index = random.choice(range(len(final_image)))
+                    final_image = image[:final_image] + image[final_image+4:]
+
+                # randomly remove columns
+                for _ in range(25):
+                    index = random.choice(range(len(final_image)))
+                    final_image = list(map(lambda x: x[:index] + x[index+4:], final_image))
+
+            else:
+                # randomly remove rows
+                for _ in range(25):
+                    index = random.choice(range(len(final_image)))
+                    final_image = image[:final_image] + image[final_image+4:]
+
+                # randomly remove columns
+                for _ in range(12):
+                    index = random.choice(range(len(final_image)))
+                    final_image = list(map(lambda x: x[:index] + x[index+4:], final_image))
+
             tf = time.time() - t0
 
             # get BDM values for the 2 halves before the compression
