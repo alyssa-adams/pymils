@@ -5540,7 +5540,7 @@ if __name__ == '__main__':
 
     # do pymils on those pasted images
 
-    data = {}
+    """data = {}
 
     for num, image in enumerate(pasted_images):
 
@@ -5638,7 +5638,7 @@ if __name__ == '__main__':
 
     # save to pickle file to plot later
     with open('pickle_jar/image_data.p', 'wb') as handle:
-        pickle.dump(data, handle)
+        pickle.dump(data, handle)"""
 
     # compare with randomly removing rows and columns
 
@@ -5677,7 +5677,7 @@ if __name__ == '__main__':
         bdm_half1 = bdm_tool.bdm(np.array(half1))
         
         # save to dict
-        data[num] = {
+        control_data[num] = {
             'bdm_half0_before': bdm_half0,
             'bdm_half1_before': bdm_half1
         }
@@ -5690,6 +5690,8 @@ if __name__ == '__main__':
 
             # 4*25 iterations on both rows and columns to get final image size of 100*100
             # randomly remove rows
+            if len(image) == 0:
+                image
             for _ in range(25):
                 index = random.choice(range(len(image)))
                 image = image[:index] + image[index+4:]
@@ -5700,21 +5702,18 @@ if __name__ == '__main__':
                 image = list(map(lambda x: x[:index] + x[index+4:], image))
 
             final_image = image
-
             tf = time.time() - t0
 
-            # get BDM values for the 4 quadrants after the compression
-            top_half = final_image[:int(len(final_image) / 2)]
-            top_left = list(map(lambda x: x[:int(len(x) / 2)], top_half))
-            top_right = list(map(lambda x: x[int(len(x) / 2):], top_half))
-            bottom_half = final_image[int(len(final_image) / 2):]
-            bottom_left = list(map(lambda x: x[:int(len(x) / 2)], bottom_half))
-            bottom_right = list(map(lambda x: x[int(len(x) / 2):], bottom_half))
+            # get BDM values for the 2 halves before the compression
+            if sideside:  # side by side halves
+                half0 = list(map(lambda x: x[:int(len(x) / 2)], final_image))
+                half1 = list(map(lambda x: x[int(len(x) / 2):], final_image))
+            else:  # top and bottom halves
+                half0 = final_image[:int(len(final_image) / 2)]
+                half1 = final_image[int(len(final_image) / 2):]
 
-            bdm_top_left = bdm_tool.bdm(np.array(top_left))
-            bdm_top_right = bdm_tool.bdm(np.array(top_right))
-            bdm_bottom_left = bdm_tool.bdm(np.array(bottom_left))
-            bdm_bottom_right = bdm_tool.bdm(np.array(bottom_right))
+            bdm_half0 = bdm_tool.bdm(np.array(half0))
+            bdm_half1 = bdm_tool.bdm(np.array(half1))
 
             # save image to file
             plt.imshow(final_image)
@@ -5723,12 +5722,9 @@ if __name__ == '__main__':
             # save to dict
             control_data[num][trial] = {}
 
-            control_data[num][trial] = {
-                'bdm_top_left_after': bdm_top_left,
-                'bdm_top_right_after': bdm_top_right,
-                'bdm_bottom_left_after': bdm_bottom_left,
-                'bdm_bottom_right_after': bdm_bottom_right,
-                'time': tf
+            control_data[num] = {
+                'bdm_half0_after': bdm_half0,
+                'bdm_half1_after': bdm_half1
             }
 
     # save to pickle file to plot later
