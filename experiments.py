@@ -2,28 +2,20 @@
 
 from pymils import PyMILS
 from pybdm import BDM
+import pybdm
+pybdm.options.set(raise_if_zero=False)
+
 import time
 import ast
-import json
 import pandas as pd
 import random
-import networkx as nx
 import numpy as np
 import pickle
-from operator import itemgetter
-from itertools import groupby, product
+from itertools import product
 
 import matplotlib.pyplot as plt
 import seaborn as sns
-
 plt.style.use('seaborn-muted')
-
-from multiprocessing import Pool, freeze_support
-from networkx.drawing.nx_agraph import graphviz_layout
-
-import pybdm
-
-pybdm.options.set(raise_if_zero=False)
 
 # make some sample images: random, blank, patterned, cellular automata, photos, and half/half mixes
 # can turn any image into 1's and 0's at https://www.dcode.fr/binary-image
@@ -6406,6 +6398,8 @@ if __name__ == '__main__':
     min_size = 0.5  # minimum size of resulting compressed image (0-1)
     sampling = 1  # fraction of sampling to find best row/column to remove (0-1)
     trials = 20  # number of times to apply PyMILS to an image
+
+    # set directories and auto-create them
     image_dir = 'images'  # directory to store resulting images
 
     # --------------------------------------------------------------
@@ -6431,9 +6425,16 @@ if __name__ == '__main__':
     # compare with randomly removing rows and columns
     # random_remove_pasted_images(pasted_images)
 
-    quit()
+    # TODO: Make some CA test images
+    # TODO: Make directories self-create
+    # TODO: Track the image boundaries to compute the resulting bdms better
+    # TODO: Also get the entropy/block entropy as well as the bdm
 
-    # plot results
+    # compare with random forest
+
+    # compare with PCA
+
+    # plot results to compare
 
     # load in the data and map to a df for plotting
     df = pd.DataFrame()
@@ -6502,116 +6503,3 @@ if __name__ == '__main__':
     plt.ylabel('time')
     plt.savefig('time.png')
     plt.clf()
-
-    for image in images:
-
-        # --------------------------------------------------------------
-        # Part 1: Make the complete network of subsets and time it
-        # --------------------------------------------------------------
-
-        # make all possible subsets
-        t0 = time.time()
-        subsets = PyMILS.image_subsets_complete(image)
-        dt = time.time() - t0
-        print('Subsets: ' + str(dt))
-
-        # map the data onto this indexed state space and measure bdm
-        t0 = time.time()
-        subset_bdms = PyMILS.batch_image_bdms(subsets, image)
-        dt = time.time() - t0
-        print('BDMs: ' + str(dt))
-
-        # get the state space network
-        t0 = time.time()
-        bdm_tool = PyMILS.init_bdm()
-        image_bdm = (image, PyMILS.image_bdm(np.array(image), bdm_tool))
-        state_space = PyMILS.subset_state_space(subsets, subset_bdms, image_bdm)
-        dt = time.time() - t0
-        print('State space network: ' + str(dt))
-
-        # --------------------------------------------------------------
-        # Part 2: What do all the possible paths look like?
-        # --------------------------------------------------------------
-
-        # which "kind of paths" through the network preserve the BDM the best?
-        # get all paths from start to cutoff size
-        t0 = time.time()
-        bdm_paths = PyMILS.all_path_bdms(state_space)
-        dt = time.time() - t0
-        print('Measuring paths: ' + str(dt))
-
-        # plot these differences (each line is a possible trajectory from start image to a final image)
-        t0 = time.time()
-        lines = []
-
-        for ab in bdm_paths.keys():
-            for path in bdm_paths[ab]:
-                line = bdm_paths[ab][path]
-                line = np.cumsum(line)
-                # the last of these values is the total BDM difference between the original image and the last image
-
-                lines.append(line)
-
-        [plt.plot(list(range(len(line))), line, linewidth=0.5) for line in lines]
-        plt.show()
-
-        dt = time.time() - t0
-        print('Plot networks: ' + str(dt))
-
-        # --------------------------------------------------------------
-        # Part 3: Pick out the ones that stay at 0 and see if there's anything in common about them
-        # --------------------------------------------------------------
-
-        # make histogram of differences between start and end images
-        total_diffs = []
-
-        for ab in bdm_paths.keys():
-            for path in bdm_paths[ab]:
-                line = bdm_paths[ab][path]
-                line = np.cumsum(line)
-                # the last of these values is the total BDM difference between the original image and the last image
-                # take diff abs value
-                total_diffs.append(abs(line[-1]))
-
-        plt.hist(total_diffs)
-        plt.show()
-
-        # get all total diffs and get their trajectory choices
-        all_diffs = []
-
-        for ab in bdm_paths.keys():
-            for path in bdm_paths[ab]:
-                line = bdm_paths[ab][path]
-                line = np.cumsum(line)
-                total_diff = abs(line[-1])  # just gets abs value for diff
-
-                # translate to c or r for column or row removed
-                path_nodes = ast.literal_eval(path)
-                ncols = np.diff(list(map(lambda x: len(ast.literal_eval(x)), path_nodes)))
-                nrows = np.diff(list(map(lambda x: len(ast.literal_eval(x)[0]), path_nodes)))
-
-                choices = []
-
-                for choice in zip(ncols, nrows):  # compare the two lists to get a single list
-                    if choice[0] == -1:
-                        choices.append(0)  # number of col changed, meaning a col was deleted
-                    else:
-                        choices.append(1)
-
-                # For all the values close to 0, do we have to switch between c and r randomly?
-                # 0 = c, 1 = r
-                # Use BDM on the c-r trajectory to check!
-                # Oh no! These strings are too small! They all have a BDM value of 0.
-                # Let's make them X times as long by repeating them two extra times like aba --> abaabaaba
-                # This is arbitrary, but as long as we do it to all of them then the differences won't matter
-                # (we just want a rough estimate of the randomness of the trajectory of choices)
-                bdm_choices = bdm1.bdm(np.array(choices + choices + choices + choices + choices))
-                all_diffs.append((total_diff, bdm_choices, choices))
-
-        # Plot total diff vs choice BDM for all the trajectories
-        # Is there a trend? If not, then we can just sample paths randomly
-
-        plt.scatter(list(map(lambda x: x[0], all_diffs)), list(map(lambda x: x[1], all_diffs)), s=1)
-        plt.show()
-
-        # It does not look like there is a trend (the horizontal bands are artifacts of BDM)
