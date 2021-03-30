@@ -5963,12 +5963,11 @@ def verify_pymils(images):
 
 
 def random_images_varied_sizes(sizes, number):
-
     '''
-
-    :param sizes:
-    :param number:
-    :return:
+    Makes a number of randomly-generated images for each size
+    :param sizes: List of ints
+    :param number: Int
+    :return: None, makes some pickle files and some plots
     '''
 
     for size in sizes:
@@ -6107,6 +6106,65 @@ def random_images_varied_sizes(sizes, number):
     plt.savefig('time.png')
 
 
+def trim_images(image_size, images):
+    '''
+    Trims images to a square of a size
+    :param image_size: int
+    :param images: List of images (which are lists of lists)
+    :return: List of images (which are lists of lists)
+    '''
+
+    images_trimmed = []
+
+    for i, image in enumerate(images):
+
+        image = image[:image_size]
+        if len(image) != image_size:
+            rows_to_add = image_size - len(image)
+            [image.append([0] * image_size) for _ in range(rows_to_add)]
+
+        image = list(map(lambda x: x[:image_size], image))
+        if len(image[0]) != image_size:
+            cols_to_add = image_size - len(image[0])
+            image = list(map(lambda x: x + [0] * cols_to_add, image))
+
+        image_bdm = bdm_tool.bdm(np.array(image))
+        image_bdms[i] = image_bdm
+        images_trimmed.append(image)
+
+        return images_trimmed
+
+
+def paste_images(image_size, images):
+
+    '''
+    Trims images to a square of a size
+    :param image_size: int
+    :param images: List of images (which are lists of lists)
+    :return: List of images (which are lists of lists)
+    '''
+
+    images_trimmed = []
+
+    for i, image in enumerate(images):
+
+        image = image[:image_size]
+        if len(image) != image_size:
+            rows_to_add = image_size - len(image)
+            [image.append([0] * image_size) for _ in range(rows_to_add)]
+
+        image = list(map(lambda x: x[:image_size], image))
+        if len(image[0]) != image_size:
+            cols_to_add = image_size - len(image[0])
+            image = list(map(lambda x: x + [0] * cols_to_add, image))
+
+        image_bdm = bdm_tool.bdm(np.array(image))
+        image_bdms[i] = image_bdm
+        images_trimmed.append(image)
+
+        return images_trimmed
+
+
 if __name__ == '__main__':
 
     # initialize PyMILS
@@ -6126,29 +6184,15 @@ if __name__ == '__main__':
     # do this for randomly generated images
     sizes = [20, 40, 60, 80, 100]
     number = 100
+    # random_images_varied_sizes(sizes, number)
 
+    # do this for real images
     # get the complexity of each image and make each image 100x100
-
-    images_trimmed = []
     image_size = 100
+    images_trimmed = trim_images(image_size, images)
+
     bdm_tool = PyMILS.init_bdm()
     image_bdms = {}
-
-    for i, image in enumerate(images):
-
-        image = image[:image_size]
-        if len(image) != image_size:
-            rows_to_add = image_size - len(image)
-            [image.append([0] * image_size) for _ in range(rows_to_add)]
-
-        image = list(map(lambda x: x[:image_size], image))
-        if len(image[0]) != image_size:
-            cols_to_add = image_size - len(image[0])
-            image = list(map(lambda x: x + [0] * cols_to_add, image))
-
-        image_bdm = bdm_tool.bdm(np.array(image))
-        image_bdms[i] = image_bdm
-        images_trimmed.append(image)
 
     # paste images together with different complexity values together in pairs
     # 0,1,3,7 are low
@@ -6182,7 +6226,7 @@ if __name__ == '__main__':
 
     # do pymils on those pasted images
 
-    """data = {}
+    data = {}
 
     for num, image in enumerate(pasted_images):
 
@@ -6201,17 +6245,17 @@ if __name__ == '__main__':
             sideside = False
 
         # get BDM values for the 4 quadrants before the compression
-        #top_half = image[:int(len(image) / 2)]
-        #top_left = list(map(lambda x: x[:int(len(x) / 2)], top_half))
-        #top_right = list(map(lambda x: x[int(len(x) / 2):], top_half))
-        #bottom_half = image[int(len(image) / 2):]
-        #bottom_left = list(map(lambda x: x[:int(len(x) / 2)], bottom_half))
-        #bottom_right = list(map(lambda x: x[int(len(x) / 2):], bottom_half))
+        # top_half = image[:int(len(image) / 2)]
+        # top_left = list(map(lambda x: x[:int(len(x) / 2)], top_half))
+        # top_right = list(map(lambda x: x[int(len(x) / 2):], top_half))
+        # bottom_half = image[int(len(image) / 2):]
+        # bottom_left = list(map(lambda x: x[:int(len(x) / 2)], bottom_half))
+        # bottom_right = list(map(lambda x: x[int(len(x) / 2):], bottom_half))
 
-        #bdm_top_left = bdm_tool.bdm(np.array(top_left))
-        #bdm_top_right = bdm_tool.bdm(np.array(top_right))
-        #bdm_bottom_left = bdm_tool.bdm(np.array(bottom_left))
-        #bdm_bottom_right = bdm_tool.bdm(np.array(bottom_right))
+        # bdm_top_left = bdm_tool.bdm(np.array(top_left))
+        # bdm_top_right = bdm_tool.bdm(np.array(top_right))
+        # bdm_bottom_left = bdm_tool.bdm(np.array(bottom_left))
+        # bdm_bottom_right = bdm_tool.bdm(np.array(bottom_right))
 
         bdm_half0 = bdm_tool.bdm(np.array(half0))
         bdm_half1 = bdm_tool.bdm(np.array(half1))
@@ -6221,12 +6265,12 @@ if __name__ == '__main__':
         plt.savefig(image_dir + '/image_' + str(num) + '.png')
 
         # save to dict
-        #data[num] = {
+        # data[num] = {
         #    'bdm_top_left_before': bdm_top_left,
         #    'bdm_top_right_before': bdm_top_right,
         #    'bdm_bottom_left_before': bdm_bottom_left,
         #    'bdm_bottom_right_before': bdm_bottom_right
-        #}
+        # }
 
         # save to dict
         data[num] = {
@@ -6280,7 +6324,7 @@ if __name__ == '__main__':
 
     # save to pickle file to plot later
     with open('pickle_jar/image_data.p', 'wb') as handle:
-        pickle.dump(data, handle)"""
+        pickle.dump(data, handle)
 
     # compare with randomly removing rows and columns
 
