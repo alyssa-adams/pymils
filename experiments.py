@@ -5824,6 +5824,7 @@ images = [
 
 
 def make_images(size, number):
+
     '''
     Make a bunch of random images of a particular size x size
     :param size: int
@@ -5836,6 +5837,7 @@ def make_images(size, number):
 
 
 def verify_pymils(images):
+
     '''
     Run three experiments that test that PyMils is working.
     Since these experiments do an exhaustive search on all possible row/column deletions, we can determine if pymils
@@ -5963,6 +5965,7 @@ def verify_pymils(images):
 
 
 def random_images_varied_sizes(sizes, number):
+
     '''
     Makes a number of randomly-generated images for each size
     :param sizes: List of ints
@@ -6107,6 +6110,7 @@ def random_images_varied_sizes(sizes, number):
 
 
 def trim_images(image_size, images):
+
     '''
     Trims images to a square of a size, and measure their bdms
     :param image_size: int
@@ -6138,6 +6142,7 @@ def trim_images(image_size, images):
 
 
 def paste_images(images_trimmed):
+
     '''
     Paste images of opposing complexity together (hardcoded)
     :param images_trimmed: List of images (which are lists of lists)
@@ -6173,12 +6178,14 @@ def paste_images(images_trimmed):
 
 
 def pymils_pasted_images(pasted_images):
-    '''
- Run PyMILS on a batch of pasted images and save the complexity results to a pickle file
- :param pasted_images: List of images (which are lists of lists)
- :return: None, just makes a pickle file
- '''
 
+    '''
+    Run PyMILS on a batch of pasted images and save the complexity results to a pickle file
+    :param pasted_images: List of images (which are lists of lists)
+    :return: None, just makes a pickle file
+    '''
+
+    bdm_tool = PyMILS.init_bdm()
     data = {}
 
     for num, image in enumerate(pasted_images):
@@ -6280,38 +6287,15 @@ def pymils_pasted_images(pasted_images):
         pickle.dump(data, handle)
 
 
-if __name__ == '__main__':
+def random_remove_pasted_images(pasted_images):
 
-    # initialize PyMILS
-    PyMILS = PyMILS()
+    '''
+    Randomly remove rows and columns on a batch of pasted images and save the complexity results to a pickle file
+    :param pasted_images: List of images (which are lists of lists)
+    :return: None, just makes a pickle file
+    '''
 
-    # set parameters for PyMILS.pymils()
-    min_size = 0.5  # minimum size of resulting compressed image (0-1)
-    sampling = 1  # fraction of sampling to find best row/column to remove (0-1)
-    trials = 20  # number of times to apply PyMILS to an image
-    image_dir = 'images'  # directory to store resulting images
-
-    # --------------------------------------------------------------
-    # Randomly sample branches by using PyMILS to get the paths that stay around 0
-    # Plot the bdm differences between start images and final images for many different image sizes
-    # --------------------------------------------------------------
-
-    # do this for randomly generated images, save results to pickle jar
-    sizes = [20, 40, 60, 80, 100]
-    number = 100
-    # random_images_varied_sizes(sizes, number)
-
-    # do this for real images
-
-    # get the complexity of each image and make each image 100x100
-    image_size = 100
-    images_trimmed = trim_images(image_size, images)[0]
-    pasted_images = paste_images(images_trimmed)
-
-    # do pymils on those pasted images
-
-    # compare with randomly removing rows and columns
-
+    bdm_tool = PyMILS.init_bdm()
     control_data = {}
 
     for num, image in enumerate(pasted_images):
@@ -6411,6 +6395,41 @@ if __name__ == '__main__':
     # save to pickle file to plot later
     with open('pickle_jar/image_control_data.p', 'wb') as handle:
         pickle.dump(control_data, handle)
+
+
+if __name__ == '__main__':
+
+    # initialize PyMILS
+    PyMILS = PyMILS()
+
+    # set parameters for PyMILS.pymils()
+    min_size = 0.5  # minimum size of resulting compressed image (0-1)
+    sampling = 1  # fraction of sampling to find best row/column to remove (0-1)
+    trials = 20  # number of times to apply PyMILS to an image
+    image_dir = 'images'  # directory to store resulting images
+
+    # --------------------------------------------------------------
+    # Randomly sample branches by using PyMILS to get the paths that stay around 0
+    # Plot the bdm differences between start images and final images for many different image sizes
+    # --------------------------------------------------------------
+
+    # do this for randomly generated images, save results to pickle jar
+    sizes = [20, 40, 60, 80, 100]
+    number = 100
+    # random_images_varied_sizes(sizes, number)
+
+    # do this for real images
+
+    # get the complexity of each image and make each image 100x100
+    image_size = 100
+    images_trimmed = trim_images(image_size, images)[0]
+    pasted_images = paste_images(images_trimmed)
+
+    # do pymils on those pasted images
+    # pymils_pasted_images(pasted_images)
+
+    # compare with randomly removing rows and columns
+    # random_remove_pasted_images(pasted_images)
 
     quit()
 
