@@ -6108,98 +6108,43 @@ def random_images_varied_sizes(sizes, number):
 
 def trim_images(image_size, images):
     '''
-    Trims images to a square of a size
+    Trims images to a square of a size, and measure their bdms
     :param image_size: int
     :param images: List of images (which are lists of lists)
     :return: List of images (which are lists of lists)
     '''
-
-    images_trimmed = []
-
-    for i, image in enumerate(images):
-
-        image = image[:image_size]
-        if len(image) != image_size:
-            rows_to_add = image_size - len(image)
-            [image.append([0] * image_size) for _ in range(rows_to_add)]
-
-        image = list(map(lambda x: x[:image_size], image))
-        if len(image[0]) != image_size:
-            cols_to_add = image_size - len(image[0])
-            image = list(map(lambda x: x + [0] * cols_to_add, image))
-
-        image_bdm = bdm_tool.bdm(np.array(image))
-        image_bdms[i] = image_bdm
-        images_trimmed.append(image)
-
-        return images_trimmed
-
-
-def paste_images(image_size, images):
-
-    '''
-    Trims images to a square of a size
-    :param image_size: int
-    :param images: List of images (which are lists of lists)
-    :return: List of images (which are lists of lists)
-    '''
-
-    images_trimmed = []
-
-    for i, image in enumerate(images):
-
-        image = image[:image_size]
-        if len(image) != image_size:
-            rows_to_add = image_size - len(image)
-            [image.append([0] * image_size) for _ in range(rows_to_add)]
-
-        image = list(map(lambda x: x[:image_size], image))
-        if len(image[0]) != image_size:
-            cols_to_add = image_size - len(image[0])
-            image = list(map(lambda x: x + [0] * cols_to_add, image))
-
-        image_bdm = bdm_tool.bdm(np.array(image))
-        image_bdms[i] = image_bdm
-        images_trimmed.append(image)
-
-        return images_trimmed
-
-
-if __name__ == '__main__':
-
-    # initialize PyMILS
-    PyMILS = PyMILS()
-
-    # set parameters for PyMILS.pymils()
-    min_size = 0.5  # minimum size of resulting compressed image (0-1)
-    sampling = 1  # fraction of sampling to find best row/column to remove (0-1)
-    trials = 20  # number of times to apply PyMILS to an image
-    image_dir = 'images'  # directory to store resulting images
-
-    # --------------------------------------------------------------
-    # Randomly sample branches by using PyMILS to get the paths that stay around 0
-    # Plot the bdm differences between start images and final images for many different image sizes
-    # --------------------------------------------------------------
-
-    # do this for randomly generated images
-    sizes = [20, 40, 60, 80, 100]
-    number = 100
-    # random_images_varied_sizes(sizes, number)
-
-    # do this for real images
-    # get the complexity of each image and make each image 100x100
-    image_size = 100
-    images_trimmed = trim_images(image_size, images)
 
     bdm_tool = PyMILS.init_bdm()
+    images_trimmed = []
     image_bdms = {}
 
-    # paste images together with different complexity values together in pairs
-    # 0,1,3,7 are low
-    # 2,4,11,14 are high
+    for i, image in enumerate(images):
+
+        image = image[:image_size]
+        if len(image) != image_size:
+            rows_to_add = image_size - len(image)
+            [image.append([0] * image_size) for _ in range(rows_to_add)]
+
+        image = list(map(lambda x: x[:image_size], image))
+        if len(image[0]) != image_size:
+            cols_to_add = image_size - len(image[0])
+            image = list(map(lambda x: x + [0] * cols_to_add, image))
+
+        image_bdm = bdm_tool.bdm(np.array(image))
+        image_bdms[i] = image_bdm
+        images_trimmed.append(image)
+
+        return images_trimmed, image_bdms
+
+
+def paste_images(images_trimmed):
+    '''
+    Paste images of opposing complexity together (hardcoded)
+    :param images_trimmed: List of images (which are lists of lists)
+    :return: List of images (which are lists of lists)
+    '''
 
     pasted_images = []
-    n_pasted_images = 20
 
     image_groups = list(product([0, 1, 3, 7], [2, 4, 11, 14]))
 
@@ -6224,7 +6169,15 @@ if __name__ == '__main__':
         pasted_image = pasted_image.tolist()
         pasted_images.append(pasted_image)
 
-    # do pymils on those pasted images
+        return pasted_images
+
+
+def pymils_pasted_images(pasted_images):
+    '''
+ Run PyMILS on a batch of pasted images and save the complexity results to a pickle file
+ :param pasted_images: List of images (which are lists of lists)
+ :return: None, just makes a pickle file
+ '''
 
     data = {}
 
@@ -6325,6 +6278,37 @@ if __name__ == '__main__':
     # save to pickle file to plot later
     with open('pickle_jar/image_data.p', 'wb') as handle:
         pickle.dump(data, handle)
+
+
+if __name__ == '__main__':
+
+    # initialize PyMILS
+    PyMILS = PyMILS()
+
+    # set parameters for PyMILS.pymils()
+    min_size = 0.5  # minimum size of resulting compressed image (0-1)
+    sampling = 1  # fraction of sampling to find best row/column to remove (0-1)
+    trials = 20  # number of times to apply PyMILS to an image
+    image_dir = 'images'  # directory to store resulting images
+
+    # --------------------------------------------------------------
+    # Randomly sample branches by using PyMILS to get the paths that stay around 0
+    # Plot the bdm differences between start images and final images for many different image sizes
+    # --------------------------------------------------------------
+
+    # do this for randomly generated images, save results to pickle jar
+    sizes = [20, 40, 60, 80, 100]
+    number = 100
+    # random_images_varied_sizes(sizes, number)
+
+    # do this for real images
+
+    # get the complexity of each image and make each image 100x100
+    image_size = 100
+    images_trimmed = trim_images(image_size, images)[0]
+    pasted_images = paste_images(images_trimmed)
+
+    # do pymils on those pasted images
 
     # compare with randomly removing rows and columns
 
