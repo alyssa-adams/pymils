@@ -15,14 +15,15 @@ from itertools import groupby, product
 
 import matplotlib.pyplot as plt
 import seaborn as sns
+
 plt.style.use('seaborn-muted')
 
 from multiprocessing import Pool, freeze_support
 from networkx.drawing.nx_agraph import graphviz_layout
 
 import pybdm
-pybdm.options.set(raise_if_zero=False)
 
+pybdm.options.set(raise_if_zero=False)
 
 # make some sample images: random, blank, patterned, cellular automata, photos, and half/half mixes
 # can turn any image into 1's and 0's at https://www.dcode.fr/binary-image
@@ -5823,7 +5824,6 @@ images = [
 
 
 def make_images(size, number):
-
     '''
     Make a bunch of random images of a particular size x size
     :param size: int
@@ -5834,8 +5834,8 @@ def make_images(size, number):
 
     return images
 
-def verify_pymils(images):
 
+def verify_pymils(images):
     '''
     Run three experiments that test that PyMils is working.
     Since these experiments do an exhaustive search on all possible row/column deletions, we can determine if pymils
@@ -5962,26 +5962,14 @@ def verify_pymils(images):
         # It does not look like there is a trend (the horizontal bands are artifacts of BDM)
 
 
-if __name__ == '__main__':
+def random_images_varied_sizes(sizes, number):
 
-    # initialize PyMILS
-    PyMILS = PyMILS()
+    '''
 
-    # set parameters for PyMILS.pymils()
-    min_size = 0.5  # minimum size of resulting compressed image (0-1)
-    sampling = 1  # fraction of sampling to find best row/column to remove (0-1)
-    trials = 20  # number of times to apply PyMILS to an image
-    image_dir = 'images'  # directory to store resulting images
-
-    # --------------------------------------------------------------
-    # Randomly sample branches by using PyMILS to get the paths that stay around 0
-    # Plot the bdm differences between start images and final images for many different image sizes
-    # --------------------------------------------------------------
-
-    # do this for randomly generated images
-    """
-    sizes = [20, 40, 60, 80, 100]
-    number = 100
+    :param sizes:
+    :param number:
+    :return:
+    '''
 
     for size in sizes:
 
@@ -5998,8 +5986,8 @@ if __name__ == '__main__':
             # test the speed of the code as a function of image size for random images
 
             # get BDM values for the 4 quadrants before the compression
-            top_half = image[:int(len(image)/2)]
-            top_left = list(map(lambda x: x[:int(len(x)/2)], top_half))
+            top_half = image[:int(len(image) / 2)]
+            top_left = list(map(lambda x: x[:int(len(x) / 2)], top_half))
             top_right = list(map(lambda x: x[int(len(x) / 2):], top_half))
             bottom_half = image[int(len(image) / 2):]
             bottom_left = list(map(lambda x: x[:int(len(x) / 2)], bottom_half))
@@ -6019,7 +6007,6 @@ if __name__ == '__main__':
             }
 
             for trial in range(trials):
-
                 # run PyMILS and time it
                 t0 = time.time()
                 chunk_size = 4
@@ -6054,8 +6041,6 @@ if __name__ == '__main__':
         with open('pickle_jar/random_data_size_' + str(size) + '.p', 'wb') as handle:
             pickle.dump(data, handle)
 
-    quit()
-
     # load in the data and map to a df for plotting
     df = pd.DataFrame()
 
@@ -6078,13 +6063,15 @@ if __name__ == '__main__':
                 df_firsthalfrow = pd.DataFrame.from_dict(before_values, orient='index').T
 
                 for trial in range(trials):
-
                     # calculate the diffs in bdm here
                     df_diffs = {
                         'bdm_top_left_diff': data[row]['bdm_top_left_before'] - data[row][trial]['bdm_top_left_after'],
-                        'bdm_top_right_diff': data[row]['bdm_top_right_before'] - data[row][trial]['bdm_top_right_after'],
-                        'bdm_bottom_left_diff': data[row]['bdm_bottom_left_before'] - data[row][trial]['bdm_bottom_left_after'],
-                        'bdm_bottom_right_diff': data[row]['bdm_bottom_right_before'] - data[row][trial]['bdm_bottom_right_after']
+                        'bdm_top_right_diff': data[row]['bdm_top_right_before'] - data[row][trial][
+                            'bdm_top_right_after'],
+                        'bdm_bottom_left_diff': data[row]['bdm_bottom_left_before'] - data[row][trial][
+                            'bdm_bottom_left_after'],
+                        'bdm_bottom_right_diff': data[row]['bdm_bottom_right_before'] - data[row][trial][
+                            'bdm_bottom_right_after']
                     }
 
                     df_diffsubrow = pd.DataFrame.from_dict(df_diffs, orient='index').T
@@ -6118,10 +6105,27 @@ if __name__ == '__main__':
     plt.xlabel('size')
     plt.ylabel('time')
     plt.savefig('time.png')
-    """
 
 
+if __name__ == '__main__':
 
+    # initialize PyMILS
+    PyMILS = PyMILS()
+
+    # set parameters for PyMILS.pymils()
+    min_size = 0.5  # minimum size of resulting compressed image (0-1)
+    sampling = 1  # fraction of sampling to find best row/column to remove (0-1)
+    trials = 20  # number of times to apply PyMILS to an image
+    image_dir = 'images'  # directory to store resulting images
+
+    # --------------------------------------------------------------
+    # Randomly sample branches by using PyMILS to get the paths that stay around 0
+    # Plot the bdm differences between start images and final images for many different image sizes
+    # --------------------------------------------------------------
+
+    # do this for randomly generated images
+    sizes = [20, 40, 60, 80, 100]
+    number = 100
 
     # get the complexity of each image and make each image 100x100
 
