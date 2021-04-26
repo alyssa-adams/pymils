@@ -281,6 +281,9 @@ class PyMILS:
         min_pixels = int(min_size*min(size))
         rounded_aspect_ratio = int(max(size)/min(size))
 
+        # get coords of bottom right pixel of upper left quadrant (for experimental verification)
+        mid_coordinates = (round(size[0]/2), round(size[1]/2))
+
         # pre-compute the row and column deletion order to preserve the aspect ratio
         # row = 0, column = 1
         min_rows = int(min_size*size[0])
@@ -373,4 +376,13 @@ class PyMILS:
             # reset the size to check if size is big enough
             size = np.array(img).shape
 
-        return img
+            # see if the "center" moved
+            # 0 = row, 1 = column
+            if choice == 0:
+                if index_to_remove < mid_coordinates[0]:
+                    mid_coordinates = (mid_coordinates[0]-1, mid_coordinates[1])
+            else:
+                if index_to_remove < mid_coordinates[1]:
+                    mid_coordinates = (mid_coordinates[0], mid_coordinates[1]-1)
+
+        return img, mid_coordinates

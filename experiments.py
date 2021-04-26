@@ -5835,13 +5835,20 @@ def single_ca_image(initial_state, n_steps, rule_number):
 	:param n_steps: number of steps should be = to len initial_state (to make a square)
 	:param rule_number: 0-255
 	:return: list of lists (image)
+
+	Adapted from https://matplotlib.org/matplotblog/posts/elementary-cellular-automata/
 	"""
+
+	def rule_index(triplet):
+		L, C, R = triplet
+		index = 7 - (4 * L + 2 * C + R)
+		return int(index)
 
 	rule_string = np.binary_repr(rule_number, 8)
 	rule = np.array([int(bit) for bit in rule_string])
 
 	m_cells = len(initial_state)
-	CA_run = np.zeros((n_steps, m_cells))
+	CA_run = np.zeros((n_steps, m_cells)).astype(int)
 	CA_run[0, :] = initial_state
 
 	for step in range(1, n_steps):
@@ -5864,13 +5871,51 @@ def make_ca_images(n_images, size):
 	Pick random ones and paste together into a square image, where each quadrant is a CA
 	:param n_images: Number of resulting images to make
 	:param size: number of cells for square image
-	:return: list of images (list of lists)
+	:return: dict of pasted images and different complexity values
 	"""
 
-	initial_state = [random.choice([0,1]) for _ in range(size)]
-	n_steps = size-1
-	rule_number = random.choice([0,255])
-	image = single_ca_image(initial_state, n_steps, rule_number)
+	ca_images = {}
+
+	bdm_tool = PyMILS.init_bdm()
+
+	for n in range(n_images):
+
+		# for each image, generate the sub-image quadrants and measure the complexity
+
+		quadrant_images = {}
+
+		for quadrant in range(0, 4):
+
+			initial_state = [random.choice([0,1]) for _ in range(size)]
+			n_steps = size
+			rule_number = random.choice(range(0,255))
+			image = single_ca_image(initial_state, n_steps, rule_number)
+
+			image_bdm = bdm_tool.bdm(image)
+			# add other measures here, and below
+
+			# save to a small dict
+			quadrant_images[quadrant] = {}
+			quadrant_images[quadrant]['image'] = image
+			quadrant_images[quadrant]['bdm'] = image_bdm
+
+		# paste together quadrants
+		pasted_image_top = np.concatenate((quadrant_images[0]['image'], quadrant_images[1]['image']), axis=1)
+		pasted_image_top = pasted_image_top.tolist()
+		pasted_image_bot = np.concatenate((quadrant_images[2]['image'], quadrant_images[3]['image']), axis=1)
+		pasted_image_bot = pasted_image_bot.tolist()
+		pasted_image = np.concatenate((pasted_image_top, pasted_image_bot))
+
+		# add other measures here also, across entire image
+		image_bdm = bdm_tool.bdm(pasted_image)
+
+		# save to larger dictionary
+		ca_images[n] = {}
+		ca_images[n]['image'] = pasted_image
+		ca_images[n]['bdm'] = image_bdm
+		ca_images[n]['quadrants'] = quadrant_images
+
+	return ca_images
 
 
 def verify_pymils(images):
@@ -6211,7 +6256,7 @@ def paste_images(images_trimmed):
 		pasted_image = pasted_image.tolist()
 		pasted_images.append(pasted_image)
 
-		return pasted_images
+	return pasted_images
 
 
 def pymils_pasted_images(pasted_images):
@@ -6438,11 +6483,13 @@ if __name__ == '__main__':
 
 	# initialize PyMILS
 	PyMILS = PyMILS()
+	bdm_tool = PyMILS.init_bdm()
 
 	# set parameters for PyMILS.pymils()
 	min_size = 0.5  # minimum size of resulting compressed image (0-1)
 	sampling = 1  # fraction of sampling to find best row/column to remove (0-1)
 	trials = 20  # number of times to apply PyMILS to an image
+	chunk_size = 4
 
 	# set directories and auto-create them
 	image_dir = 'images'  # directory to store resulting images
@@ -6452,22 +6499,51 @@ if __name__ == '__main__':
 	# Plot the bdm differences between start images and final images for many different image sizes
 	# --------------------------------------------------------------
 
+	# --------- load in the images
+
 	# do this for quadrant CA images
 	n_images = 10
 	size = 20
 	images = make_ca_images(n_images, size)
 
 	# do this for randomly generated images, save results to pickle jar
-	sizes = [20, 40, 60, 80, 100]
-	number = 100
+	#sizes = [20, 40, 60, 80, 100]
+	#number = 100
 	# random_images_varied_sizes(sizes, number)
 
 	# do this for real images
-
 	# get the complexity of each image and make each image 100x100
-	image_size = 100
-	images_trimmed = trim_images(image_size, images)[0]
-	pasted_images = paste_images(images_trimmed)
+	#image_size = 100
+	#images_trimmed = trim_images(image_size, images)[0]
+	#pasted_images = paste_images(images_trimmed)
+
+	# ------- run pymils on CA quadrant images
+
+	for n in range(n_images):
+
+		# load in image
+		image = images[n]['image']
+		initial_bdm = images[n]['bdm']
+		initial_size = (len(image[0]), len(image))
+		# would load in other values here
+
+		# pymils
+		final_image_pymils, mid_coordinates = PyMILS.mils(image.tolist(), min_size, bdm_tool, sampling, chunk_size)
+
+		# get measurements
+		final_bdm_pymils = bdm_tool.bdm(np.array(final_image_pymils))
+		final_size = (len(final_image_pymils[0]), len(final_image_pymils))
+
+		# randomly remove same number of columns and rows
+		remove_n_cols = initial_size[0] - final_size[0]
+		remove_n_rows = initial_size[1] - final_size[1]
+
+		final_image_random = image
+
+		for rand_row in range(remove_n_rows):
+			final_image_random = np.delete(final_image_random, random.choice(), 0)
+		for rand_col in range(remove_n_cols):
+			np.delete(a, -1, axis=1)
 
 	# do pymils on those pasted images
 	# pymils_pasted_images(pasted_images)
