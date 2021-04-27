@@ -6504,8 +6504,8 @@ if __name__ == '__main__':
 	# --------- load in the images
 
 	# do this for quadrant CA images
-	n_images = 10
-	size = 20
+	n_images = 100
+	size = 50
 	images = make_ca_images(n_images, size)
 
 	# do this for randomly generated images, save results to pickle jar
@@ -6542,22 +6542,22 @@ if __name__ == '__main__':
 		lower_left = list(map(lambda x: x[:mid_coordinates[0]], final_image_pymils[mid_coordinates[1]:]))
 		lower_right = list(map(lambda x: x[mid_coordinates[0]:], final_image_pymils[mid_coordinates[1]:]))
 
-		if len(upper_left) != 0:
-			upper_left_bdm = bdm_tool.bdm(np.array(upper_left))
-		else:
+		if len(upper_left) == 0 or len(upper_left[0]) == 0:
 			upper_left_bdm = 0
-		if len(upper_right) != 0:
-			upper_right_bdm = bdm_tool.bdm(np.array(upper_right))
 		else:
+			upper_left_bdm = bdm_tool.bdm(np.array(upper_left))
+		if len(upper_right) == 0 or len(upper_right[0]) == 0:
 			upper_right_bdm = 0
-		if len(lower_left) != 0:
-			lower_left_bdm = bdm_tool.bdm(np.array(lower_left))
 		else:
+			upper_right_bdm = bdm_tool.bdm(np.array(upper_left))
+		if len(lower_left) == 0 or len(lower_left[0]) == 0:
 			lower_left_bdm = 0
-		if len(lower_right) != 0:
-			lower_right_bdm = bdm_tool.bdm(np.array(lower_right))
 		else:
+			lower_left_bdm = bdm_tool.bdm(np.array(lower_left))
+		if len(lower_right) == 0 or len(lower_right[0]) == 0:
 			lower_right_bdm = 0
+		else:
+			lower_right_bdm = bdm_tool.bdm(np.array(lower_right))
 
 		# compare with random forest
 
@@ -6582,18 +6582,42 @@ if __name__ == '__main__':
 		images[n]['final_image_pymils'] = final_image_pymils
 		images[n]['mid_coordinates'] = mid_coordinates
 		images[n]['final_bdm_pymils'] = final_bdm_pymils
-		images[n]['upper_left_bdm'] = upper_left_bdm
-		images[n]['upper_right_bdm'] = upper_right_bdm
-		images[n]['lower_left_bdm'] = lower_left_bdm
-		images[n]['lower_right_bdm'] = lower_right_bdm
+
+		images[n]['upper_left_rule'] = images[n]['quadrants'][0]['rule']
+		images[n]['upper_right_rule'] = images[n]['quadrants'][1]['rule']
+		images[n]['lower_left_rule'] = images[n]['quadrants'][2]['rule']
+		images[n]['lower_right_rule'] = images[n]['quadrants'][3]['rule']
+
+		images[n]['upper_left_bdm_initial'] = images[n]['quadrants'][0]['bdm']
+		images[n]['upper_right_bdm_initial'] = images[n]['quadrants'][1]['bdm']
+		images[n]['lower_left_bdm_initial'] = images[n]['quadrants'][2]['bdm']
+		images[n]['lower_right_bdm_initial'] = images[n]['quadrants'][3]['bdm']
+
+		images[n]['upper_left_bdm_final'] = upper_left_bdm
+		images[n]['upper_right_bdm_final'] = upper_right_bdm
+		images[n]['lower_left_bdm_final'] = lower_left_bdm
+		images[n]['lower_right_bdm_final'] = lower_right_bdm
+
 		images[n]['final_image_random'] = final_image_random
 		images[n]['final_bdm_random'] = final_bdm_random
 
-	# do pymils on those pasted images
-	# pymils_pasted_images(pasted_images)
+		# remove unwanted keys to make into a df easier
+		del images[n]['quadrants']
+		del images[n]['image']
+		del images[n]['final_image_pymils']
+		del images[n]['mid_coordinates']
+		del images[n]['final_image_random']
 
 	# load in the data and map to a df for plotting
-	df = pd.DataFrame()
+	with open('pickle_jar/ca_image_data.p', 'wb') as handle:
+		pickle.dump(images, handle)
+
+	quit()
+
+	with open('pickle_jar/ca_image_data.p', 'rb') as f:
+		images = pickle.load(f)
+
+	df = pd.DataFrame.from_dict(images, orient='index')
 
 	# for previous images
 	"""with open('pickle_jar/image_data.p', 'rb') as f:
@@ -6631,32 +6655,17 @@ if __name__ == '__main__':
 				# add to the main one as a row
 				df = pd.concat([df, df_row], ignore_index=True)"""
 
-	sns.boxplot(x="image_number", y="bdm_top_left_diff", data=df)
-	plt.xlabel('image #')
-	plt.ylabel('Top Left $\Delta$BDM')
-	plt.savefig('bdm_top_left_diff.png')
-	plt.clf()
-
-	sns.boxplot(x="image_number", y="bdm_top_right_diff", data=df)
+	# image quadrants before and after pymils
+	sns.scatterplot(x="bdm", y="final_bdm_random", data=df)
 	plt.xlabel('image #')
 	plt.ylabel('Top Right $\Delta$BDM')
 	plt.savefig('bdm_top_right_diff.png')
 	plt.clf()
 
-	sns.boxplot(x="image_number", y="bdm_bottom_left_diff", data=df)
-	plt.xlabel('image #')
-	plt.ylabel('Bottom Left $\Delta$BDM')
-	plt.savefig('bdm_bottom_left_diff.png')
-	plt.clf()
-
-	sns.boxplot(x="image_number", y="bdm_bottom_right_diff", data=df)
-	plt.xlabel('image #')
-	plt.ylabel('Bottom Right $\Delta$BDM')
-	plt.savefig('bdm_bottom_right_diff.png')
-	plt.clf()
-
-	sns.boxplot(x="image_number", y="time", data=df)
-	plt.xlabel('image #')
-	plt.ylabel('time')
-	plt.savefig('time.png')
+	# whole image bdm values before and after
+	sns.scatterplot(x="bdm", y="final_bdm_pymils", data=df)
+	plt.xlabel('BDM')
+	plt.ylabel('PyMILS Final BDM')
+	plt.show()
+	#plt.savefig('bdm_diffs_whole.png')
 	plt.clf()
