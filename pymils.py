@@ -376,13 +376,25 @@ class PyMILS:
             # reset the size to check if size is big enough
             size = np.array(img).shape
 
-            # see if the "center" moved
+            # see if the "center" moved. don't forget about the chunk size!
             # 0 = row, 1 = column
             if choice == 0:
                 if index_to_remove < mid_coordinates[0]:
-                    mid_coordinates = (mid_coordinates[0]-1, mid_coordinates[1])
+                    # check to see if the chunk overlaps with the middle
+                    overlap = mid_coordinates[0] - index_to_remove
+                    if overlap < chunk_size:
+                        overlap = overlap
+                    else:
+                        overlap = chunk_size
+                    mid_coordinates = (mid_coordinates[0]-overlap, mid_coordinates[1])
             else:
                 if index_to_remove < mid_coordinates[1]:
-                    mid_coordinates = (mid_coordinates[0], mid_coordinates[1]-1)
+                    # check to see if the chunk overlaps with the middle
+                    overlap = mid_coordinates[1] - index_to_remove
+                    if overlap < chunk_size:
+                        overlap = overlap
+                    else:
+                        overlap = chunk_size
+                    mid_coordinates = (mid_coordinates[0], mid_coordinates[1]-overlap)
 
         return img, mid_coordinates

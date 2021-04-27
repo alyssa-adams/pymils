@@ -5898,6 +5898,7 @@ def make_ca_images(n_images, size):
 			quadrant_images[quadrant] = {}
 			quadrant_images[quadrant]['image'] = image
 			quadrant_images[quadrant]['bdm'] = image_bdm
+			quadrant_images[quadrant]['rule'] = rule_number
 
 		# paste together quadrants
 		pasted_image_top = np.concatenate((quadrant_images[0]['image'], quadrant_images[1]['image']), axis=1)
@@ -5908,6 +5909,7 @@ def make_ca_images(n_images, size):
 
 		# add other measures here also, across entire image
 		image_bdm = bdm_tool.bdm(pasted_image)
+		# TODO: Also get the entropy/block entropy as well as the bdm
 
 		# save to larger dictionary
 		ca_images[n] = {}
@@ -6534,38 +6536,67 @@ if __name__ == '__main__':
 		final_bdm_pymils = bdm_tool.bdm(np.array(final_image_pymils))
 		final_size = (len(final_image_pymils[0]), len(final_image_pymils))
 
+		# get measurements on final quadrants using mid_coordinates
+		upper_left = list(map(lambda x: x[:mid_coordinates[0]], final_image_pymils[:mid_coordinates[1]]))
+		upper_right = list(map(lambda x: x[mid_coordinates[0]:], final_image_pymils[:mid_coordinates[1]]))
+		lower_left = list(map(lambda x: x[:mid_coordinates[0]], final_image_pymils[mid_coordinates[1]:]))
+		lower_right = list(map(lambda x: x[mid_coordinates[0]:], final_image_pymils[mid_coordinates[1]:]))
+
+		if len(upper_left) != 0:
+			upper_left_bdm = bdm_tool.bdm(np.array(upper_left))
+		else:
+			upper_left_bdm = 0
+		if len(upper_right) != 0:
+			upper_right_bdm = bdm_tool.bdm(np.array(upper_right))
+		else:
+			upper_right_bdm = 0
+		if len(lower_left) != 0:
+			lower_left_bdm = bdm_tool.bdm(np.array(lower_left))
+		else:
+			lower_left_bdm = 0
+		if len(lower_right) != 0:
+			lower_right_bdm = bdm_tool.bdm(np.array(lower_right))
+		else:
+			lower_right_bdm = 0
+
+		# compare with random forest
+
+		# compare with PCA
+
 		# randomly remove same number of columns and rows
+
 		remove_n_cols = initial_size[0] - final_size[0]
 		remove_n_rows = initial_size[1] - final_size[1]
 
 		final_image_random = image
 
 		for rand_row in range(remove_n_rows):
-			final_image_random = np.delete(final_image_random, random.choice(), 0)
+			final_image_random = np.delete(final_image_random, random.choice(range(len(final_image_random))), 0)
 		for rand_col in range(remove_n_cols):
-			np.delete(a, -1, axis=1)
+			final_image_random = np.delete(final_image_random, random.choice(range(len(final_image_random))), 1)
+
+		# get measurements
+		final_bdm_random = bdm_tool.bdm(np.array(final_image_random))
+
+		# save measurements to dictionary
+		images[n]['final_image_pymils'] = final_image_pymils
+		images[n]['mid_coordinates'] = mid_coordinates
+		images[n]['final_bdm_pymils'] = final_bdm_pymils
+		images[n]['upper_left_bdm'] = upper_left_bdm
+		images[n]['upper_right_bdm'] = upper_right_bdm
+		images[n]['lower_left_bdm'] = lower_left_bdm
+		images[n]['lower_right_bdm'] = lower_right_bdm
+		images[n]['final_image_random'] = final_image_random
+		images[n]['final_bdm_random'] = final_bdm_random
 
 	# do pymils on those pasted images
 	# pymils_pasted_images(pasted_images)
 
-	# compare with randomly removing rows and columns
-	# random_remove_pasted_images(pasted_images)
-
-	# TODO: Make some CA test images
-	# TODO: Make directories self-create
-	# TODO: Track the image boundaries to compute the resulting bdms better
-	# TODO: Also get the entropy/block entropy as well as the bdm
-
-	# compare with random forest
-
-	# compare with PCA
-
-	# plot results to compare
-
 	# load in the data and map to a df for plotting
 	df = pd.DataFrame()
 
-	with open('pickle_jar/image_data.p', 'rb') as f:
+	# for previous images
+	"""with open('pickle_jar/image_data.p', 'rb') as f:
 		data = pickle.load(f)
 
 		# bdm values don't change for after but the time does
@@ -6598,7 +6629,7 @@ if __name__ == '__main__':
 				df_row = pd.concat([df_firsthalfrow, df_subrow, df_diffsubrow], axis=1, join="inner")
 
 				# add to the main one as a row
-				df = pd.concat([df, df_row], ignore_index=True)
+				df = pd.concat([df, df_row], ignore_index=True)"""
 
 	sns.boxplot(x="image_number", y="bdm_top_left_diff", data=df)
 	plt.xlabel('image #')
